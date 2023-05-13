@@ -96,8 +96,9 @@ void MostrarTareas(Heap *elHeap){
     printf("%s - %d ", elHeap->heapArray[i].data , elHeap->heapArray[i].priority);
     if(elHeap->heapArray[i].precedencia != NULL){
       Pair * pairAux = firstMap(elHeap->heapArray[i].precedencia);
+      printf("- ");
       while(pairAux != NULL){
-        printf("- %s", pairAux->key);
+        printf("%s ", pairAux->key);
         pairAux = nextMap(elHeap->heapArray[i].precedencia);
       }
       printf("\n");
@@ -154,20 +155,40 @@ const char *get_csv_field (char * tmp, int k) {
     return NULL;
 }
 
-void cargarDatos(Heap *elHeap){
+
+  
+ void cargarDatos(Heap *elHeap){
   char nombreArchivo[50];
   char linea[1024];
   
   printf("Ingrese el archivo para cargar los datos: ");
   scanf("%s", nombreArchivo);
 
-  FILE* archivo = fopen(nombreArchivo, "w");
+  FILE* archivo = fopen(nombreArchivo, "r");
   if (archivo == NULL){
     printf("Error al abrir el archivo de exportación \n");
     return;
   }
-  
-  
+
+    fgets(linea, 1024, archivo); 
+    
+    while (fgets(linea, sizeof(linea), archivo)) {
+    char* nombre = get_csv_field(linea, 0);
+    char* prioridad_str = get_csv_field(linea, 1);
+
+    if (nombre != NULL && prioridad_str != NULL) {
+      int prioridad = atoi(prioridad_str);
+      heapElem tarea;
+      tarea.data = strdup(nombre);
+      tarea.priority = prioridad;
+      tarea.precedencia = NULL;
+
+      heap_push(elHeap, tarea.data, tarea.priority);
+
+      free(nombre);
+      free(prioridad_str);
+    }
+  }
   
 
   printf("Datos cargados correctamente\n");
@@ -200,6 +221,7 @@ int main(void) {
       case 5:
         break;
       case 6:
+        cargarDatos(elHeap);
         break;
       case 7:
         break;
