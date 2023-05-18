@@ -50,7 +50,8 @@ typedef struct{
 
 Accion* createAccion(int tipo , char * nombre ){
   Accion* newA = calloc(1, sizeof(Accion));
-  newA->tipo = 
+  newA->tipo = tipo;
+  strcpy(newA->nombre , nombre);
 
   return newA;
 }
