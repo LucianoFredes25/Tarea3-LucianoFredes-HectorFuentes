@@ -1,15 +1,40 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
 #include "heap.h"
-#include <stdbool.h>
+#include "hashmap.h"
+#include "list.h"
+
+typedef struct HashMap HashMap;
+
+typedef struct Node Node;
+
+struct Node {
+    void * data;
+    Node * next;
+    Node * prev;
+};
+
+struct List {
+    Node * head;
+    Node * tail;
+    Node * current;
+};
+
+struct HashMap {
+    Pair ** buckets;
+    long size;
+    long capacity;
+    long current;
+};
 
 typedef struct nodo{
-  void* data;
+  void * data;
   int priority;
-  void * precedencia; 
+  HashMap * precedencia;    
 }heapElem;
 
 typedef struct Heap{
@@ -17,7 +42,6 @@ typedef struct Heap{
   int size;
   int capac;
 } Heap;
-
 
 void* heap_top(Heap* pq){ 
   if(pq->size == 0)
@@ -57,12 +81,12 @@ void heap_push(Heap* pq, void* data, int priority){
       padre = posActual / 2;
     
     //correctamente posicionado
-    if(pq->heapArray[padre].priority < pq->heapArray[posActual].priority)
+    if(pq->heapArray[padre].priority <= pq->heapArray[posActual].priority)
       break;
       
     //cambio de posicion
     else
-    {
+    { 
       auxData = pq->heapArray[padre].data;
       auxPrio = pq->heapArray[padre].priority;
       
@@ -71,7 +95,19 @@ void heap_push(Heap* pq, void* data, int priority){
       
       pq->heapArray[posActual].data = auxData;
       pq->heapArray[posActual].priority = auxPrio;
-      
+
+      if(pq->heapArray[padre].precedencia != NULL){
+        if(pq->heapArray[posActual].precedencia == NULL){
+          pq->heapArray[posActual].precedencia = createMap(100);
+          pq->heapArray[posActual].precedencia = pq->heapArray[padre].precedencia;
+          pq->heapArray[padre].precedencia = NULL;
+        }
+        else{
+          HashMap * hashAux = pq->heapArray[posActual].precedencia;
+          pq->heapArray[posActual].precedencia = pq->heapArray[padre].precedencia;
+          pq->heapArray[padre].precedencia = hashAux;
+        }
+      }
       posActual = padre;
     }
   }

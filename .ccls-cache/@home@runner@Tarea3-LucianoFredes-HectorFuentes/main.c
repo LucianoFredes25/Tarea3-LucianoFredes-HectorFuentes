@@ -1,14 +1,28 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "heap.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include "heap.h"
 #include "hashmap.h"
+#include "list.h"
 
 typedef struct HashMap HashMap;
-//int enlarge_called=0;
+
+typedef struct Node Node;
+
+struct Node {
+    void * data;
+    Node * next;
+    Node * prev;
+};
+
+struct List {
+    Node * head;
+    Node * tail;
+    Node * current;
+};
 
 struct HashMap {
     Pair ** buckets;
@@ -29,6 +43,17 @@ typedef struct Heap{
   int capac;
 } Heap;
 
+typedef struct{
+  int tipo;
+  
+}Accion;
+
+Accion* createAccion(int tipo ){
+  Accion* newA = calloc(1, sizeof(Accion));
+  
+
+  return newA;
+}
 
 void mostrarMenu() {
   printf("\n---  Tareas  ---\n");
@@ -47,7 +72,6 @@ void AgregarTareas(Heap * elHeap){
   char nombre[50];
   int prioridad;
 
-
   printf("Ingrese el nombre de la tarea:\n");
   scanf("%s",nombre);
   printf("Ingrese la prioridad de la tarea:\n");
@@ -57,6 +81,7 @@ void AgregarTareas(Heap * elHeap){
   tarea.data = strdup(nombre);
   tarea.priority = prioridad;
 
+  
   heap_push(elHeap, tarea.data, tarea.priority);
 
   printf("Tarea agregada correctamente\n");
@@ -70,51 +95,186 @@ int buscarTarea(Heap * elHeap , char * nombre , int * numero){
   return 0;
 }
 
+List * reordenar(Heap * elHeap){
+  List * listaFinal = createList();
+  List * listaPrecedencia = createList();
+  
+  int tamaño = elHeap->size , cont = 0;
+
+  for(int i = 0 ; i < tamaño ; i++){
+    
+    if(elHeap->heapArray[i].precedencia == NULL){
+      if(listaFinal->head == NULL)
+        pushFront(listaFinal, i);
+      else
+        pushBack(listaFinal, i);
+    }
+    else{
+      cont++;
+      if(listaPrecedencia->head == NULL){
+        pushFront(listaPrecedencia, i);
+      }
+      else{
+        pushBack(listaPrecedencia, i);
+      }
+    }
+  }
+    
+  if(cont != 0){
+    void * aux = firstList(listaPrecedencia);
+    for(int j = 0 ; j < cont ; j++){
+      if(listaFinal->head == NULL)
+        pushFront(listaFinal, aux);
+      else
+        pushBack(listaFinal, aux);
+      aux = nextList(listaPrecedencia);
+    }
+  }
+  return listaFinal;
+}
+  
+
+
 void EstablecerPrecedencia(Heap *elHeap){
     char tarea1[50], tarea2[50];
     int numero1 = 0 , numero2 = 0;
     
     printf("Ingrese el nombre de la tarea precedente:\n");
     scanf("%s", tarea1);
+  
+    if(buscarTarea(elHeap , tarea1 , &numero1) == 0){
+      printf("Tarea no encontrada!\n");
+      return;
+    }
+    
     printf("Ingrese el nombre de la tarea que debe realizarse despues:\n");
     scanf("%s", tarea2);
-    if(buscarTarea(elHeap , tarea1 , &numero1) && buscarTarea(elHeap, tarea2 , &numero2)){
-      if(elHeap->heapArray[numero1].precedencia == NULL)
-        elHeap->heapArray[numero1].precedencia = createMap(100);
-      
-      insertMap(elHeap->heapArray[numero1].precedencia,elHeap->heapArray[numero2].data , elHeap->heapArray[numero2].priority);
-
+    
+    if(buscarTarea(elHeap, tarea2 , &numero2) == 0){
+      printf("Tarea no encontrada!\n");
+      return;
     }
-    else
-      printf("Error , nombre de tarea(s) invalido!\n");
+      
+    if(strcmp(tarea1,tarea2)==0){
+      printf("Una tarea no puede ser precedente de si misma! \n");
+      return;
+    }
+    
+    if(elHeap->heapArray[numero1].precedencia == NULL)
+      elHeap->heapArray[numero1].precedencia = createMap(100);
+      
+    insertMap(elHeap->heapArray[numero1].precedencia, elHeap->heapArray[numero2].data , elHeap->heapArray[numero2].priority);
+
+
+  printf("Precedencia establecida correctamente!\n");
+
 }
+void imprimirTareas(Heap * elHeap , List * listaFinal , int tamaño){
 
-
-void MostrarTareas(Heap *elHeap){
-  int tamaño = elHeap->size;
+  void * aux = firstList(listaFinal);
+  
   for(int i = 0 ; i < tamaño ; i++){
-    printf("%s - %d ", elHeap->heapArray[i].data , elHeap->heapArray[i].priority);
-    if(elHeap->heapArray[i].precedencia != NULL){
-      Pair * pairAux = firstMap(elHeap->heapArray[i].precedencia);
-      printf("- ");
+    int nose = aux;
+    printf("%-2d) %2s - %1d ", (i+1),elHeap->heapArray[nose].data , elHeap->heapArray[nose].priority);
+    if(elHeap->heapArray[nose].precedencia != NULL){
+      printf("Precedencias: ");
+      Pair * pairAux = firstMap(elHeap->heapArray[nose].precedencia);
+    
       while(pairAux != NULL){
-        printf("%s ", pairAux->key);
-        pairAux = nextMap(elHeap->heapArray[i].precedencia);
+        printf("%s ",   pairAux->key);
+        pairAux = nextMap(elHeap->heapArray[nose].precedencia);
       }
       printf("\n");
     }
     else
       printf("\n");
+    aux=nextList(listaFinal);
   }
 }
 
-void TareasCompletadas(Heap *elHeap){
+void MostrarTareas(Heap *elHeap){
+  int tamaño = elHeap->size;
+  if (tamaño == 0){
+    printf("No hay tareas!\n");
+    return;
+  }
+  
+  List * listaOrden = reordenar(elHeap);
 
+  imprimirTareas(elHeap , listaOrden, tamaño);
 }
 
-void deshacerAccion(Heap *elHeap){
 
+void eliminarPrecedencias(Heap * elHeap , char * nombre){
+  int tamaño = elHeap->size;
+  for(int i = 0 ; i < tamaño ; i++){
+    if(elHeap->heapArray[i].precedencia != NULL){
+      eraseMap(elHeap->heapArray[i].precedencia, nombre);
+      if(elHeap->heapArray[i].precedencia->size == 0)
+        elHeap->heapArray[i].precedencia = NULL;
+    }
+  }
 }
+
+void deshacerAccion(Heap *elHeap)
+{
+ 
+
+  if(){
+    printf("--- NO hay acciones para deshacer ---\n");
+    return;
+  }
+
+  
+  
+
+  printf("--- Accion deshecha correctamente ---\n"); 
+}
+
+
+void tareasCompletadas(Heap *elHeap){
+  char nombre[50];
+  int n = 0;
+  
+  printf("Ingrese el nombre de la tarea realizada: ");
+  scanf("%s", nombre);
+
+  if (buscarTarea(elHeap, nombre, &n)) {
+    if (elHeap->heapArray[n].precedencia != NULL) {
+      printf("¿Estás seguro que deseas eliminar esta tarea? (s/n): ");
+      char confirmacion;
+      scanf(" %c", &confirmacion);
+      if (tolower(confirmacion) == 's') {
+        
+        for (int i = n; i < elHeap->size - 1; i++) {
+          elHeap->heapArray[i] = elHeap->heapArray[i + 1];
+        }
+        elHeap->size--;
+       eliminarPrecedencias(elHeap , nombre);
+      printf("sali al precedencia\n");
+        
+        printf("Tarea marcada como completada y eliminada correctamente.\n");
+      } else {
+        printf("Eliminación de tarea cancelada.\n");
+      }
+    } else {
+      //free(elHeap->heapArray[n].data);
+      
+      for (int i = n; i < elHeap->size - 1; i++) {
+        elHeap->heapArray[i] = elHeap->heapArray[i + 1];
+      }
+      elHeap->size--;
+
+      eliminarPrecedencias(elHeap , nombre);
+      
+      printf("Tarea marcada como completada y eliminada correctamente.\n");
+    }
+  } else {
+    printf("Tarea no encontrada.\n");
+  }
+}
+
+
 
 const char *get_csv_field (char * tmp, int k) {
     int open_mark = 0;
@@ -157,7 +317,7 @@ const char *get_csv_field (char * tmp, int k) {
 
 
   
- void cargarDatos(Heap *elHeap){
+void cargarDatos(Heap *elHeap) {
   char nombreArchivo[50];
   char linea[1024];
   
@@ -165,35 +325,60 @@ const char *get_csv_field (char * tmp, int k) {
   scanf("%s", nombreArchivo);
 
   FILE* archivo = fopen(nombreArchivo, "r");
-  if (archivo == NULL){
+  if (archivo == NULL) {
     printf("Error al abrir el archivo de exportación \n");
     return;
   }
 
-    fgets(linea, 1024, archivo); 
-    
-    while (fgets(linea, sizeof(linea), archivo)) {
+  fgets(linea, 1024, archivo);
+
+  while (fgets(linea, sizeof(linea), archivo)) {
+    int numero1 = 0 , numero2 = 0;
     char* nombre = get_csv_field(linea, 0);
     char* prioridad_str = get_csv_field(linea, 1);
+    char* precedencias = get_csv_field(linea, 2);
 
-    if (nombre != NULL && prioridad_str != NULL) {
+     
+    
+    if (nombre != NULL && prioridad_str != NULL && precedencias != NULL) {
       int prioridad = atoi(prioridad_str);
+
       heapElem tarea;
       tarea.data = strdup(nombre);
       tarea.priority = prioridad;
-      tarea.precedencia = NULL;
-
+      
+     
       heap_push(elHeap, tarea.data, tarea.priority);
+      
+      if(strlen(precedencias) > 1){
+        
+        buscarTarea(elHeap , tarea.data , &numero1);
+        
+        char* precedencia = strtok(precedencias, " ");
 
+        buscarTarea(elHeap , precedencia , &numero2);
+        
+        while (precedencia != NULL) {
+          if(elHeap->heapArray[numero1].precedencia == NULL)
+            elHeap->heapArray[numero1].precedencia = createMap(100);
+          
+          insertMap(elHeap->heapArray[numero1].precedencia, elHeap->heapArray[numero2].data , elHeap->heapArray[numero2].priority );
+          
+          precedencia = strtok(NULL, " ");
+        }
+      }
+      free(precedencias);
       free(nombre);
       free(prioridad_str);
+     
     }
   }
-  
 
   printf("Datos cargados correctamente\n");
   fclose(archivo);
 }
+
+
 
 int main(void) {
   int opcion = 7;
@@ -217,6 +402,7 @@ int main(void) {
         MostrarTareas(elHeap);
          break;
       case 4:
+        tareasCompletadas(elHeap);
         break;
       case 5:
         break;
