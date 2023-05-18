@@ -45,12 +45,12 @@ typedef struct Heap{
 
 typedef struct{
   int tipo;
-  
+  char * nombre;
 }Accion;
 
-Accion* createAccion(int tipo ){
+Accion* createAccion(int tipo , char * nombre ){
   Accion* newA = calloc(1, sizeof(Accion));
-  
+  newA->tipo = 
 
   return newA;
 }
@@ -383,6 +383,8 @@ void cargarDatos(Heap *elHeap) {
 int main(void) {
   int opcion = 7;
   Heap * elHeap = createHeap();
+  
+  List * listaDeshacer = createList();
   
   while (true) {
 
