@@ -159,6 +159,11 @@ Si las tareas no se encuentran en el heap o si la tarea precedente es la misma q
 se muestra un mensaje de error. Luego, se crea una estructura precedencia para la tarea precedente si aún no existe, 
 y se inserta la tarea siguiente en dicha estructura.  */
 void EstablecerPrecedencia(Heap *elHeap , List * listaDeshacer ){
+    if(elHeap->size == 0 || elHeap->size == 1){
+      printf("No puede realizar precedencias en este momento, agregue mas tareas! \n");
+      return;
+    }
+    
     char tarea1[50], tarea2[50];
     int numero1 = 0 , numero2 = 0;
     
@@ -231,7 +236,7 @@ void MostrarTareas(Heap *elHeap){
   }
   
   List * listaOrden = reordenar(elHeap);
-
+  
   imprimirTareas(elHeap , listaOrden, tamaño);
 }
 
@@ -270,6 +275,11 @@ void tareasCompletadas(Heap *elHeap , List * listaDeshacer , char * nombreDeshac
       return;
     }
   }
+
+  if(elHeap->size == 0){
+      printf("No hay tareas para eliminar! \n");
+      return;
+    }
   
   printf("Ingrese el nombre de la tarea realizada: ");
   scanf("%s", nombre);
