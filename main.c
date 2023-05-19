@@ -45,14 +45,23 @@ typedef struct Heap{
 
 typedef struct{
   int tipo;
-  char * nombre;
+  int posicion;
+  char * nombre[50];
+  int prioridad;
+  HashMap * hashPrecedencias;
+  List * listaNombres;
 }Accion;
 
-Accion* createAccion(int tipo , char * nombre ){
+Accion* createAccion(int tipo, int posicion , char * nombre, int prioridad,
+HashMap * hashPrecedencias , List * listaNombres){ 
   Accion* newA = calloc(1, sizeof(Accion));
+  
   newA->tipo = tipo;
+  newA->posicion = posicion;
   strcpy(newA->nombre , nombre);
-
+  newA->prioridad = prioridad;
+  newA->hashPrecedencias = hashPrecedencias;
+  newA->listaNombres = listaNombres;
   return newA;
 }
 
@@ -68,26 +77,32 @@ void mostrarMenu() {
   printf("Seleccione una opción: ");
 }
 
-
-void AgregarTareas(Heap * elHeap){
+/* la función solicita al usuario ingresar el nombre y la prioridad de una tarea,
+luego crea una estructura heapElem con esos datos y la agrega al montículo (elHeap) utilizando heap_push.*/
+void AgregarTareas(Heap * elHeap , List * listaDeshacer){
   char nombre[50];
   int prioridad;
-
+  heapElem tarea;
+  
   printf("Ingrese el nombre de la tarea:\n");
   scanf("%s",nombre);
   printf("Ingrese la prioridad de la tarea:\n");
   scanf("%d", &prioridad);
   
-  heapElem tarea;
+  
   tarea.data = strdup(nombre);
   tarea.priority = prioridad;
 
   
   heap_push(elHeap, tarea.data, tarea.priority);
-
+  Accion * newA = createAccion(1,"", tarea.data, tarea.priority,"" ,"");
+  pushFront(listaDeshacer, newA );
   printf("Tarea agregada correctamente\n");
 }
 
+/*la función busca una tarea específica en el heap comparando su nombre con los nombres 
+de las tareas en el heap. Si encuentra la tarea, retorna 1 y almacena la posición en numero. 
+Si no la encuentra, retorna 0*/
 int buscarTarea(Heap * elHeap , char * nombre , int * numero){
   for(int i = 0 ; i < elHeap->size ; i++){
     if(strcmp(elHeap->heapArray[i].data , nombre) == 0) return 1;
@@ -96,6 +111,10 @@ int buscarTarea(Heap * elHeap , char * nombre , int * numero){
   return 0;
 }
 
+/* la función crea dos listas: listaFinal y listaPrecedencia. Luego, recorre los elementos del heap y los agrega
+a la lista listaFinal si no tienen precedencia, o a la lista listaPrecedencia si tienen precedencia. 
+Finalmente, reordena los elementos de listaPrecedencia y los agrega a listaFinal. 
+La función retorna listaFinal con los elementos reordenados.*/
 List * reordenar(Heap * elHeap){
   List * listaFinal = createList();
   List * listaPrecedencia = createList();
@@ -135,8 +154,11 @@ List * reordenar(Heap * elHeap){
 }
   
 
-
-void EstablecerPrecedencia(Heap *elHeap){
+/* la función solicita al usuario los nombres de dos tareas y establece la precedencia entre ellas en el heap. 
+Si las tareas no se encuentran en el heap o si la tarea precedente es la misma que la tarea siguiente, 
+se muestra un mensaje de error. Luego, se crea una estructura precedencia para la tarea precedente si aún no existe, 
+y se inserta la tarea siguiente en dicha estructura.  */
+void EstablecerPrecedencia(Heap *elHeap , List * listaDeshacer ){
     char tarea1[50], tarea2[50];
     int numero1 = 0 , numero2 = 0;
     
@@ -166,10 +188,15 @@ void EstablecerPrecedencia(Heap *elHeap){
       
     insertMap(elHeap->heapArray[numero1].precedencia, elHeap->heapArray[numero2].data , elHeap->heapArray[numero2].priority);
 
+    Accion * newA = createAccion(2,numero1, elHeap->heapArray[numero2].data,"","", "");
+    pushFront(listaDeshacer, newA );
 
   printf("Precedencia establecida correctamente!\n");
 
 }
+
+/*la función recorre la lista listaFinal, que contiene el orden de las tareas en el heap,
+e imprime en pantalla cada tarea con su prioridad y sus precedencias, si las tienen.*/
 void imprimirTareas(Heap * elHeap , List * listaFinal , int tamaño){
 
   void * aux = firstList(listaFinal);
@@ -193,6 +220,9 @@ void imprimirTareas(Heap * elHeap , List * listaFinal , int tamaño){
   }
 }
 
+/* a función verifica si hay tareas en el heap y luego muestra en pantalla las tareas junto con su prioridad 
+y sus precedencias, si las tienen. Utiliza la función reordenar para obtener el orden correcto de las tareas 
+según las precedencias.*/
 void MostrarTareas(Heap *elHeap){
   int tamaño = elHeap->size;
   if (tamaño == 0){
@@ -205,78 +235,98 @@ void MostrarTareas(Heap *elHeap){
   imprimirTareas(elHeap , listaOrden, tamaño);
 }
 
-
-void eliminarPrecedencias(Heap * elHeap , char * nombre){
+/* la función recorre el heap y elimina las precedencias asociadas al nombre de una tarea.
+Luego, almacena las tareas afectadas en la lista listaNombres. Esto se realiza mediante 
+la eliminación del nombre de las precedencias correspondientes y el almacenamiento 
+de las tareas en la lista utilizando la función pushBack.*/
+void eliminarPrecedencias(Heap * elHeap , char * nombre , List * listaNombres){
   int tamaño = elHeap->size;
   for(int i = 0 ; i < tamaño ; i++){
     if(elHeap->heapArray[i].precedencia != NULL){
-      eraseMap(elHeap->heapArray[i].precedencia, nombre);
-      if(elHeap->heapArray[i].precedencia->size == 0)
-        elHeap->heapArray[i].precedencia = NULL;
+      if(searchMap(elHeap->heapArray[i].precedencia, nombre) != NULL){
+        eraseMap(elHeap->heapArray[i].precedencia, nombre);
+        pushFront(listaNombres , elHeap->heapArray[i].data);
+        if(elHeap->heapArray[i].precedencia->size == 0)
+          elHeap->heapArray[i].precedencia = NULL;
+      }
     }
   }
 }
 
-void deshacerAccion(Heap *elHeap)
-{
- 
-
-  if(){
-    printf("--- NO hay acciones para deshacer ---\n");
-    return;
-  }
-
-  
-  
-
-  printf("--- Accion deshecha correctamente ---\n"); 
-}
-
-
-void tareasCompletadas(Heap *elHeap){
+/*Basicamente esta funcion se encarga de leer el nombre de una tarea y eliminar, para
+luego no mostrarla en las tareas por hacer*/
+void tareasCompletadas(Heap *elHeap , List * listaDeshacer , char * nombreDeshacer){
   char nombre[50];
   int n = 0;
+  List * listaPrecedencias = createList(); 
+
+  //comprobar si se esta realizando una operacion del deshacer
+  if(nombreDeshacer != NULL){
+    if (buscarTarea(elHeap, nombreDeshacer, &n)){
+      for (int i = n; i < elHeap->size - 1; i++) {
+          elHeap->heapArray[i] = elHeap->heapArray[i + 1];
+        }
+        elHeap->size--; 
+      return;
+    }
+  }
   
   printf("Ingrese el nombre de la tarea realizada: ");
   scanf("%s", nombre);
-
+  
+  //buscamos la tarea para ver si existe
   if (buscarTarea(elHeap, nombre, &n)) {
+    
+    int prio = elHeap->heapArray[n].priority;
+
+    //esto para ver si la tarea tiene precedencias
     if (elHeap->heapArray[n].precedencia != NULL) {
-      printf("¿Estás seguro que deseas eliminar esta tarea? (s/n): ");
+      HashMap * hashAux = elHeap->heapArray[n].precedencia;
+      //confirmacion para eliminar
+      printf("¿Estás seguro que deseas eliminar esta tarea? (S/N): ");
       char confirmacion;
       scanf(" %c", &confirmacion);
       if (tolower(confirmacion) == 's') {
-        
+        //movemos los datos una posicion a la izquierda hasta el dato a eliminar
         for (int i = n; i < elHeap->size - 1; i++) {
           elHeap->heapArray[i] = elHeap->heapArray[i + 1];
         }
-        elHeap->size--;
-       eliminarPrecedencias(elHeap , nombre);
-      printf("sali al precedencia\n");
-        
+        elHeap->size--; 
+
+        //eliminamos la tarea de las precedencias en que se encuentre
+        eliminarPrecedencias(elHeap , nombre, listaPrecedencias);
+
+        //sumamos una accion a la pila
+        Accion * newA = createAccion(3,n ,nombre, prio,hashAux, listaPrecedencias);
+        pushFront(listaDeshacer, newA );
         printf("Tarea marcada como completada y eliminada correctamente.\n");
       } else {
         printf("Eliminación de tarea cancelada.\n");
       }
-    } else {
-      //free(elHeap->heapArray[n].data);
       
+    } else {
+      //eliminacion para datos que no tengan precedencia
       for (int i = n; i < elHeap->size - 1; i++) {
         elHeap->heapArray[i] = elHeap->heapArray[i + 1];
       }
       elHeap->size--;
-
-      eliminarPrecedencias(elHeap , nombre);
-      
+      eliminarPrecedencias(elHeap , nombre , listaPrecedencias);
       printf("Tarea marcada como completada y eliminada correctamente.\n");
+      Accion * newA = createAccion(3,n ,nombre, prio,NULL, listaPrecedencias);
+      pushFront(listaDeshacer, newA );
     }
+    
+    
+    
   } else {
     printf("Tarea no encontrada.\n");
   }
 }
 
 
-
+/* la función se encarga de recorrer la línea de un archivo CSV manejando correctamente 
+los casos donde los campos pueden estar entre comillas dobles y separados por comas.
+Retorna el campo como una cadena de caracteres.*/
 const char *get_csv_field (char * tmp, int k) {
     int open_mark = 0;
     char* ret=(char*) malloc (100*sizeof(char));
@@ -315,9 +365,68 @@ const char *get_csv_field (char * tmp, int k) {
 
     return NULL;
 }
+/*Esta funcion recibe el heap y una lista de acciones, la funcion leera la primera instancia de accion que se encuentre en la lista ya que esta seria la ultima accion realizada y por ende la que se debera deshacer, la accion tendra guardada un valor int el cual indicara que operaciones se deberan realizar para deshacer la accion*/
+void deshacerAccion(Heap *elHeap , List * listaDeshacer)
+{
+  //ver si hay acciones para deshacer
+  if(elHeap->size == 0 || firstList(listaDeshacer)==NULL){
+    printf("--- NO hay acciones para deshacer ---\n");
+    return;
+  }
+  //leer la primera accion
+  Accion * accion = firstList(listaDeshacer);
 
+  //la accion seria agregar una tarea por lo que solo se debera eliminar del heap
+  if(accion->tipo == 1){
+    tareasCompletadas(elHeap,listaDeshacer,accion->nombre);
+  }
 
+  /*en este caso seria agregar una precedencia, por lo que este debera eliminar dicha precedencia, cabe destacar que no se hara ninguna comprobacion respecto a la precedencia ya que se sabe que esta si existe, solo se dejara su hashmap de precedencias en null en caso de ver que no hay mas precedencias*/
+  else if(accion->tipo == 2){
+    eraseMap(elHeap->heapArray[accion->posicion].precedencia, accion->nombre);
+    if(elHeap->heapArray[accion->posicion].precedencia->size == 0)
+      elHeap->heapArray[accion->posicion].precedencia = NULL;
+  }
+
+//deshacer una eliminacion, cabe destacar que no es usada la funcion agregar tarea ya que al ser usada esta intercambiara varios datos al dejar la tarea en la posicion que le corresponde pero ademas no la dejara en la posicion que originalmente le tocaba.
+  else if(accion->tipo == 3){
+    //posicion del ultimo dato que existe
+    int ultimo = elHeap->size-1 ;
+    elHeap->size++;
+    //movemos todos los datos desde la posicion del dato original una posicion a la derecha dentro del heap
+    for(int i = ultimo ; i >= accion->posicion ; i--){
+      elHeap->heapArray[i] = elHeap->heapArray[i-1];
+    }
+    //agregamos los datos de la tarea eliminada
+    elHeap->heapArray[accion->posicion].data = accion->nombre;
+    elHeap->heapArray[accion->posicion].priority = accion->prioridad;
+    //comprobar si esta tarea tenia precedencias
+    if(accion->hashPrecedencias != NULL)
+      elHeap->heapArray[accion->posicion].precedencia = accion->hashPrecedencias;
+    else
+      //no tenia precedencias pero dejamos esta casilla en NULL por si el dato que habia antes tenia precedencia
+      elHeap->heapArray[accion->posicion].precedencia = NULL;
+
+    //entramos a una lista de nombres que indicara si la tarea era precedente de otras tareas
+    void * auxNombre = firstList(accion->listaNombres);
+    while(auxNombre != NULL){
+      int numero1=0;
+      //buscamos donde se encuentra la tarea a la que se le agregara la precedencia
+      buscarTarea(elHeap, auxNombre, &numero1);
+      if(elHeap->heapArray[numero1].precedencia == NULL)
+        elHeap->heapArray[numero1].precedencia = createMap(100);
+      //insertamos la tarea
+      insertMap(elHeap->heapArray[numero1].precedencia, elHeap->heapArray[accion->posicion].data , elHeap->heapArray[accion->posicion].priority);
+      auxNombre=nextList(accion->listaNombres);
+    }
+  }  
+  //eliminar el front de la pila 
+  popFront(listaDeshacer);
+  printf("--- Accion deshecha correctamente ---\n"); 
+}
   
+/* la función lee un archivo CSV y carga los datos en una estructura de heap, 
+donde cada elemento del heap tiene un nombre, una prioridad y un mapa de precedencias.*/  
 void cargarDatos(Heap *elHeap) {
   char nombreArchivo[50];
   char linea[1024];
@@ -396,18 +505,19 @@ int main(void) {
     
     switch(opcion){
       case 1:
-        AgregarTareas(elHeap);
+        AgregarTareas(elHeap , listaDeshacer);
         break;
       case 2:
-        EstablecerPrecedencia(elHeap);
+        EstablecerPrecedencia(elHeap , listaDeshacer);
         break;
       case 3:
         MostrarTareas(elHeap);
          break;
       case 4:
-        tareasCompletadas(elHeap);
+        tareasCompletadas(elHeap , listaDeshacer , NULL);
         break;
       case 5:
+        deshacerAccion(elHeap ,listaDeshacer);
         break;
       case 6:
         cargarDatos(elHeap);
