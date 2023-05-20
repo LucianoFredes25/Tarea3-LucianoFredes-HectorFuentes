@@ -1,21 +1,21 @@
 Nombre, Prioridad, TareasPrecedentes
 A, 1,
-B, 3, A
-C, 2, A
+B, 3, A 
+C, 2, A 
 D, 4, B
 E, 5, B
 F, 1,
-G, 2, F
+G, 2, F A
 H, 3, F
-I, 5, G
+I, 5, G A
 J, 4, F
-K, 1,
-L, 2, K
+K, 1, B
+L, 2, K D
 M, 3, K
-N, 4, L
+N, 4, L C
 O, 5, K
-P, 1,
+P, 1, A G C D
 Q, 3, P
-R, 2, P
+R, 2, P Q M
 S, 5, Q
-T, 4, P
+T, 4, P I

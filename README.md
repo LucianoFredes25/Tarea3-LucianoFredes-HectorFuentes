@@ -19,40 +19,41 @@ EL ANEXO:
 
 (3) Coevaluación del trabajo en equipo (usando rúbrica):
 
-Nombre Equipo: 
-Participación activa y equitativa: 
-Resolución de conflictos: 
-Colaboración: 
-Responsabilidad: 
-Comunicación: 
+Nombre Equipo: LucianoHector
+Participación activa y equitativa: 20
+Resolución de conflictos: 20
+Colaboración: 20
+Responsabilidad: 20
+Comunicación: 20
 
-Puntaje Total: 
+Puntaje Total: 100
 
-Aspectos a mejorar: 
+Aspectos a mejorar: Mejorar un pco el orden en el algoritmo.
 
 (4) coevaluación del aporte individual de cada integrante (usando rúbrica).
 -----------------------------------------------------------------
 Nombre: Hector Fuentes
-Participación: 1 
-Responsabilidad: 1
-Comunicación: 1
-Calidad del Trabajo: 1
-Trabajo en Equipo: 1
+Participación: 20
+Responsabilidad: 20
+Comunicación: 20
+Calidad del Trabajo: 20
+Trabajo en Equipo: 20
 
-Aspectos a mejorar:
+Aspectos a mejorar: organizarce con el horario, para poder llegar al que se establecio para la realizacion
+                    de la tarea.
 
 
-Puntaje Total: 5
+Puntaje Total: 100
 ------------------------------------------------------------------------
 Nombre: Luciano Fredes
-Participación: 
-Responsabilidad: 
-Comunicación: 
-Calidad del Trabajo: 
-Trabajo en Equipo: 
+Participación: 20
+Responsabilidad: 20
+Comunicación: 20
+Calidad del Trabajo: 20
+Trabajo en Equipo: 20
 
-Aspectos a mejorar:
+Aspectos a mejorar: Ser un poco mas ordenado al escribir.
 
-Puntaje Total: 
+Puntaje Total: 100
 -------------------------------------------------------------------------
 

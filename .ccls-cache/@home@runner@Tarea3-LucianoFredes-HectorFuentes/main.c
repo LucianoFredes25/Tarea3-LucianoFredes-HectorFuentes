@@ -476,9 +476,12 @@ void cargarDatos(Heap *elHeap) {
         
         char* precedencia = strtok(precedencias, " ");
 
-        buscarTarea(elHeap , precedencia , &numero2);
+        
         
         while (precedencia != NULL) {
+          numero2 = 0;
+          buscarTarea(elHeap , precedencia , &numero2);
+          
           if(elHeap->heapArray[numero1].precedencia == NULL)
             elHeap->heapArray[numero1].precedencia = createMap(100);
           
